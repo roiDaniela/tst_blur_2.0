@@ -9,8 +9,8 @@ const unblurBtn = document.getElementById('unblur-btn');
 const ctx = canvas.getContext('2d');
 
 //
-const input = document.getElementById('file-input');
-const videoSource = document.createElement('source');
+// const input = document.getElementById('file-input');
+// const videoSource = document.createElement('source');
 
 const mobileAndTabletCheck = navigator.userAgentData.mobile;
 
@@ -60,37 +60,69 @@ unblurBtn.addEventListener('click', e => {
 
 //
 
-input.addEventListener('change', function() {
-  unblurBtn.disabled = true;
-  blurBtn.disabled = false;
-
-  unblurBtn.hidden = true;
-  blurBtn.hidden = false;
-
-  const files = this.files || [];
-
-  if (!files.length) return;
-
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    videoSource.setAttribute('src', e.target.result);
-    videoElement.appendChild(videoSource);
-    videoElement.load();
-    videoElement.play();
-  };
-
-  reader.onprogress = function (e) {
-    console.log('progress: ', Math.round((e.loaded * 100) / e.total));
-  };
-
-  reader.readAsDataURL(files[0]);
-});
+// input.addEventListener('change', function() {
+//   unblurBtn.disabled = true;
+//   blurBtn.disabled = false;
+//
+//   unblurBtn.hidden = true;
+//   blurBtn.hidden = false;
+//
+//   const files = this.files || [];
+//
+//   if (!files.length) return;
+//
+//   const reader = new FileReader();
+//
+//   reader.onload = function (e) {
+//     videoSource.setAttribute('src', e.target.result);
+//     videoElement.appendChild(videoSource);
+//     videoElement.load();
+//     videoElement.play();
+//   };
+//
+//   reader.onprogress = function (e) {
+//     console.log('progress: ', Math.round((e.loaded * 100) / e.total));
+//   };
+//
+//   reader.readAsDataURL(files[0]);
+// });
 
 videoElement.onplaying = () => {
   canvas.height = videoElement.videoHeight;
   canvas.width = videoElement.videoWidth;
 };
+
+const videoInput = document.getElementById('vid-file-picker');
+
+videoInput.addEventListener('change', e => {
+  // startBtn.disabled = true;
+  // stopBtn.disabled = false;
+
+  unblurBtn.disabled = false;
+  blurBtn.disabled = false;
+
+  playLocalVideoFile();
+}, false);
+
+function playLocalVideoFile(evt) {
+  // let videoEl = document.getElementById('local-vid');
+  const file = videoInput.files[0];
+  const type = file.type;
+  if (!videoElement.canPlayType(type)) {
+    alert('cannot play that file');
+    return;
+  }
+  // videoElement.src = URL.createObjectURL(file);
+  videoElement.src = URL.createObjectURL(file);
+  videoElement.play().then(() => {
+    // Mozilla currently prefixes the function name, so we have to check for either
+    if (typeof videoElement.mozCaptureStream == 'function') {
+      window.localVideoStream = videoElement.mozCaptureStream();
+    } else if (typeof videoElement.captureStream == 'function') {
+      window.localVideoStream = videoElement.captureStream();
+    }
+  });
+}
 
 function startVideoStream() {
   navigator.mediaDevices.getUserMedia({video: true, audio: false})
@@ -109,8 +141,19 @@ function startVideoStream() {
 function stopVideoStream() {
   const stream = videoElement.srcObject;
 
-  stream.getTracks().forEach(track => track.stop());
-  videoElement.srcObject = null;
+  if (stream != null){
+    stream.getTracks().forEach(track => track.stop());
+
+    videoElement.srcObject = null;
+  }
+
+  // const stream2 = videoElement.src;
+  //
+  // if(stream2 != null){
+  //   URL.revokeObjectURL(link.href);
+  //
+  //   videoElement.src = null;
+  // }
 }
 
 function loadBodyPix() {
@@ -135,7 +178,8 @@ function loadBodyPix() {
 
 async function perform(net) {
 
-  while ((startBtn.disabled && blurBtn.hidden) || (blurBtn.disabled)){
+  // while (startBtn.disabled && blurBtn.hidden){
+  while (blurBtn.hidden){
     const net = await bodyPix.load();
     // 1 way
 
