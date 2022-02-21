@@ -93,14 +93,14 @@ videoElement.onplaying = () => {
 };
 
 const videoInput = document.getElementById('vid-file-picker');
-
+var isLocalFile = false;
 videoInput.addEventListener('change', e => {
   // startBtn.disabled = true;
   // stopBtn.disabled = false;
 
   unblurBtn.disabled = false;
   blurBtn.disabled = false;
-
+  isLocalFile = true;
   playLocalVideoFile();
 }, false);
 
@@ -125,8 +125,10 @@ function playLocalVideoFile(evt) {
 }
 
 function startVideoStream() {
+
   navigator.mediaDevices.getUserMedia({video: true, audio: false})
     .then(stream => {
+      isLocalFile = false;
       videoElement.srcObject = stream;
       videoElement.play();
     })
@@ -184,16 +186,32 @@ async function perform(net) {
     // 1 way
 
     // const partSegmentation = await net.segmentMultiPersonParts(videoElement);
-    const partSegmentation = await net.segmentPersonParts(videoElement, {
-      flipHorizontal: false,
-      internalResolution: 'high',
-      segmentationThreshold: 0.7
-    });
-
-    const backgroundBlurAmount = 20;
-    const edgeBlurAmount = 20;
-    const flipHorizontal = true;
     const faceBodyPartIdsToBlur = [0, 1];
+    const flipHorizontal = true;
+    let partSegmentation;
+    let backgroundBlurAmount;
+    let edgeBlurAmount;
+
+    if(isLocalFile){
+      partSegmentation = await net.segmentPersonParts(videoElement, {
+        flipHorizontal: false,
+        internalResolution: 'high',
+        segmentationThreshold: 0.4
+      });
+
+      backgroundBlurAmount = 3;
+      edgeBlurAmount = 3;
+
+    }else{
+      partSegmentation = await net.segmentPersonParts(videoElement, {
+        flipHorizontal: false,
+        internalResolution: 'medium',
+        segmentationThreshold: 0.7
+      });
+
+      backgroundBlurAmount = 10;
+      edgeBlurAmount = 10;
+    }
 
     bodyPix.blurBodyPart(
         canvas, videoElement, partSegmentation, faceBodyPartIdsToBlur,
